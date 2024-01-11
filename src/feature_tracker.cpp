@@ -154,14 +154,17 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
 
         //ROS_DEBUG("add feature begins");
         TicToc t_a;
+        // 将新检测的点添加到forw_pts数组中，id=-1
         addPoints();
         //ROS_DEBUG("selectFeature costs: %fms", t_a.toc());
     }
     prev_img = cur_img;
     prev_pts = cur_pts;
     prev_un_pts = cur_un_pts;
+    
     cur_img = forw_img;
     cur_pts = forw_pts;
+    // 得到当前帧的归一化平面坐标，计算feature速度
     undistortedPoints();
     prev_time = cur_time;
 }
@@ -265,6 +268,7 @@ void FeatureTracker::undistortedPoints()
         Eigen::Vector2d a(cur_pts[i].x, cur_pts[i].y);
         Eigen::Vector3d b;
         m_camera->liftProjective(a, b);
+        // 归一化平面坐标
         cur_un_pts.push_back(cv::Point2f(b.x() / b.z(), b.y() / b.z()));
         cur_un_pts_map.insert(make_pair(ids[i], cv::Point2f(b.x() / b.z(), b.y() / b.z())));
         //printf("cur pts id %d %f %f", ids[i], cur_un_pts[i].x, cur_un_pts[i].y);
@@ -273,10 +277,11 @@ void FeatureTracker::undistortedPoints()
     if (!prev_un_pts_map.empty())
     {
         double dt = cur_time - prev_time;
+        // 归一化平面上的速度
         pts_velocity.clear();
         for (unsigned int i = 0; i < cur_un_pts.size(); i++)
         {
-            if (ids[i] != -1)
+            if (ids[i] != -1)   // 新加的feature, id=-1
             {
                 std::map<int, cv::Point2f>::iterator it;
                 it = prev_un_pts_map.find(ids[i]);
@@ -287,6 +292,7 @@ void FeatureTracker::undistortedPoints()
                     pts_velocity.push_back(cv::Point2f(v_x, v_y));
                 }
                 else
+                    // 新加的feature，上一帧没有对应的点
                     pts_velocity.push_back(cv::Point2f(0, 0));
             }
             else

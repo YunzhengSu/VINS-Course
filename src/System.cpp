@@ -47,6 +47,7 @@ System::~System()
     ofs_pose.close();
 }
 
+// 将[x,y,1,u,v,velocity_u, velocity_v] 封装好，放在feature_buf里
 void System::PubImageData(double dStampSec, Mat &img)
 {
     if (!init_feature)
@@ -99,6 +100,7 @@ void System::PubImageData(double dStampSec, Mat &img)
         bool completed = false;
         completed |= trackerData[0].updateID(i);
 
+        // 更新当前帧新检测出的feature's id.
         if (!completed)
             break;
     }
